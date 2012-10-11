@@ -11,7 +11,7 @@
 #define READ_BITS 8192      // bits on card to be read
 #define BLINK_BYTES 4       // led blink speed
 
-// Card<==>Arduino pinning
+// Card <==> Arduino pinning
 uint8_t pin_RST = 8;
 uint8_t pin_CLK = 2;
 uint8_t pin_IO  = 10;
@@ -76,7 +76,7 @@ dumpCard(void) {
 	pulse(pin_CLK);
 	digitalWrite(pin_RST, LOW);
 
-    // (READ_BITS / 8 becausei: uint8_t foo[n] reserves n byte not bit)
+    // (READ_BITS / 8 because: uint8_t foo[n] reserves n bytes not bit)
 	uint8_t data[READ_BITS / 8];        // allocate memory for card dump 
 	memset(data, 0x00, READ_BITS / 8);  // write 0x00 in every byte of the allocated memory
     
@@ -84,7 +84,7 @@ dumpCard(void) {
 	for(uint16_t bit = 0; bit < READ_BITS; bit++) {
 		data[bit / 8] |= ((digitalRead(pin_IO) == HIGH) << (bit % 8)); // read bit
 		pulse(pin_CLK);                     // pulse clock every bit
-		if (bit % (BLINK_BYTES * 8) == 0)   // blink led every 8 bit
+		if (bit % (BLINK_BYTES * 8) == 0)   // blink led every BLINK_BYTES bytes
 			digitalWrite(pin_STAT, !digitalRead(pin_STAT));
 	} // loop for # of bits to be read from the chard
 
