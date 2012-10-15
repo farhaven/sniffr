@@ -4,18 +4,18 @@
 import serial # pyserial needed
 import string
 
-import sys
-sys.path.append('/usr/share/pyshared')
+def main():
+    sin=serial.Serial("/dev/ttyUSB0",9600)
+    fo = open("log.csv", "w")
 
-test=serial.Serial("/dev/ttyUSB0",9600)
-fo = open("log.csv", "w")
-
-try:
-    while True:
-        line = test.readline(eol='\r')
-        fo.write(line[0] + "," + line[1] + "\n");
+    try:
+        while True:
+            line = sin.readline(eol='\r')
+            fo.write(line[0] + "," + line[1] + "\n");
                 
-except KeyboardInterrupt:
-    pass # do cleanup here
+    except KeyboardInterrupt:
+        fo.close()
+        return 0;
 
-fo.close()
+if __name__ == "__main__":
+    main()
