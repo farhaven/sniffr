@@ -51,6 +51,8 @@ vomit(void) {
 		Serial.print("1");
 	}
 
+	Serial.print(",");
+
 	if(digitalRead(pin_IO) == LOW){
 		Serial.print("0");
 	}
