@@ -10,7 +10,8 @@ def main():
 
     try:
         while True:
-            line = sin.readline(eol='\r')
+            line = sin.readline()
+            print line
             fo.write(line[0] + "," + line[1] + "\n");
                 
     except KeyboardInterrupt:
