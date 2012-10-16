@@ -11,7 +11,7 @@
 uint8_t pin_RST = 8;
 uint8_t pin_CLK = 2;
 uint8_t pin_IO  = 10;
-uint8_t pin_STAT = 13;      // debug LED
+uint8_t pin_STAT = 13;	  // debug LED
 
 void cardWaitReset(void);
 void vomit(void);
@@ -38,21 +38,28 @@ void
 setup() {
 	Serial.begin(9600);
 
-    pinMode(pin_STAT, OUTPUT);
+	pinMode(pin_STAT, OUTPUT);
 	pinMode(pin_RST, INPUT_PULLUP);
 	pinMode(pin_CLK, INPUT_PULLUP);
 	pinMode(pin_IO, INPUT_PULLUP);
 
 	cardWaitReset();
-	vomit();
 } //setup
 
 void
 loop() {
-    digitalWrite(pin_STAT, HIGH); // Arduino led turn on, when vomit() it done
-    Serial.println("Press any key to print psc to serial.");
-    Serial.read();
-    Serial.println(psc[0],psc[1]);
+	digitalWrite(pin_STAT, LOW);
+	vomit();
+	digitalWrite(pin_STAT, HIGH);
+	Serial.println("Press any key to print psc to serial.");
+	Serial.read();
+	Serial.print("0x");
+	for (int i = 0; i < 2; i++) {
+		if (psc[0] < 0)
+			Serial.print("0");
+		Serial.print(psc[0], HEX);
+	}
+	Serial.println("");
 } //loop
 
 
