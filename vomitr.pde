@@ -45,9 +45,11 @@ vomit(void) {
 	while(digitalRead(pin_CLK) == LOW);
 
 	if(digitalRead(pin_RST) == LOW){
+		/* data output */
 		Serial.print("0");
 	}
 	else {
+		/* command entry */
 		Serial.print("1");
 	}
 
