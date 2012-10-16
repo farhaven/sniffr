@@ -11,6 +11,7 @@
 uint8_t pin_RST = 8;
 uint8_t pin_CLK = 2;
 uint8_t pin_IO  = 10;
+uint8_t pin_STAT = 13;      // debug LED
 
 void cardWaitReset(void);
 void vomit(void);
@@ -29,7 +30,7 @@ enum state_t {
 
 #define MAGIC_WRITE 143 /* magic for "write to anywhere with highest two bits set */
 
-uint8_t pin[2] = {0, 0};
+uint8_t psc[2] = {0, 0}; // 2-byte programmable security code
 uint8_t last_byte = 0;
 uint8_t bit_count = 0;
 
@@ -37,6 +38,7 @@ void
 setup() {
 	Serial.begin(9600);
 
+    pinMode(pin_STAT, OUTPUT);
 	pinMode(pin_RST, INPUT_PULLUP);
 	pinMode(pin_CLK, INPUT_PULLUP);
 	pinMode(pin_IO, INPUT_PULLUP);
@@ -47,8 +49,10 @@ setup() {
 
 void
 loop() {
-	/* TODO: once vomit() is done, flash some light or the like to indicate being done */
-	/* TODO: also, offer an option to dump the key bits to serial */
+    digitalWrite(pin_STAT, HIGH); // Arduino led turn on, when vomit() it done
+    Serial.println("Press any key to print psc to serial.");
+    Serial.read();
+    Serial.println(psc[0],psc[1]);
 } //loop
 
 
@@ -113,7 +117,7 @@ vomit(void) {
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_PIN1:
-				pin[0] = last_byte;
+				psc[0] = last_byte;
 				state = WAIT_WRITE2;
 				break;
 			case WAIT_WRITE2:
@@ -129,7 +133,7 @@ vomit(void) {
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_PIN2:
-				pin[1] = last_byte;
+				psc[1] = last_byte;
 			default:
 				return;
 		}
