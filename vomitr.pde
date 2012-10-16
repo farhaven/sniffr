@@ -23,7 +23,7 @@ setup() {
 	pinMode(pin_CLK, INPUT_PULLUP);
 	pinMode(pin_IO, INPUT_PULLUP);
 
-    cardReset();
+	cardReset();
 } //setup
 
 void
@@ -34,36 +34,36 @@ loop() {
 
 void //wait for reset to finish
 cardReset(void) {
-    while(digitalRead(pin_RST) == LOW); 
-    while(digitalRead(pin_CLK) == LOW); 
-    while(digitalRead(pin_CLK) == HIGH); 
-    while(digitalRead(pin_RST) == HIGH); 
+	while(digitalRead(pin_RST) == LOW);
+	while(digitalRead(pin_CLK) == LOW);
+	while(digitalRead(pin_CLK) == HIGH);
+	while(digitalRead(pin_RST) == HIGH);
 } //cardReset
 
 void // print the RST and IO state each Clock pulse to serial consol
 vomit(void) {
-    while(digitalRead(pin_CLK) == LOW);
+	while(digitalRead(pin_CLK) == LOW);
 
-    if(digitalRead(pin_RST) == LOW){
-        Serial.print("0");   
-    }
-    else {
-        Serial.print("1");
-    }
+	if(digitalRead(pin_RST) == LOW){
+		Serial.print("0");
+	}
+	else {
+		Serial.print("1");
+	}
 
-    if(digitalRead(pin_IO) == LOW){
-        Serial.print("0");   
-    }
-    else {
-        Serial.print("1");
-    }
+	if(digitalRead(pin_IO) == LOW){
+		Serial.print("0");
+	}
+	else {
+		Serial.print("1");
+	}
 
-    Serial.println();
+	Serial.println();
 
-    while(digitalRead(pin_CLK) == HIGH);
+	while(digitalRead(pin_CLK) == HIGH);
 } //vomit
 
 // Bugfix for arduino libc
 void __cxa_pure_virtual (void) {
-    while(1);
+	while(1);
 } //__cxa_pure_virtual
