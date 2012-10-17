@@ -24,7 +24,7 @@ void
 help(void) {
 	Serial.println("a - dump card and print ASCII chars if possible");
 	Serial.println("d - dump card in HEX");
-}
+} // help
 
 void
 setup() {
@@ -35,7 +35,7 @@ setup() {
 	pinMode(pin_CLK, OUTPUT);
 	pinMode(pin_IO, INPUT_PULLUP);
 	help();
-}
+} // setup
 
 void
 loop() {
@@ -65,7 +65,7 @@ loop() {
 		default:
 			help();
 	}
-}
+} // loop
 
 // generate CLK pulse (use interrupt?) 
 void
@@ -75,7 +75,7 @@ pulse(uint8_t pin) {
 	digitalWrite(pin, HIGH);
 	delay(1);
 	digitalWrite(pin, LOW);
-} //pulse
+} // pulse
 
 // read card and write output to serial console
 void
@@ -112,8 +112,8 @@ dumpCard(bool printHex) {
 		}
 	} // loop for # of bits to be read from the chard
 	Serial.println("");
-} //dumpCard
+} // dumpCard
 
 void __cxa_pure_virtual (void) {
   while(1);
-}
+} __cxa_pure_virtual
