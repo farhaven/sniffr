@@ -57,7 +57,7 @@ loop() {
 	Serial.read();
 	for (int i = 0; i < 2; i++) {
 		Serial.print("0x");
-		if (psc[i] < 0)
+		if (psc[i] < 0x10)
 			Serial.print("0");
 		Serial.print(psc[i], HEX);
 		Serial.print(" ");
