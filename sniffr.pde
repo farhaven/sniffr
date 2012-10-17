@@ -23,6 +23,12 @@ void pulse(uint8_t);
 bool printHex = true;
 
 void
+help(void) {
+	Serial.println("a - dump card and print ASCII chars if possible");
+	Serial.println("d - dump card in HEX");
+}
+
+void
 setup() {
 	Serial.begin(9600);
 
@@ -35,10 +41,8 @@ setup() {
 // ask if card dump should be printed in ASCII or HEX
 void
 loop() {
-	Serial.println("\r\na - dump card and print ASCII chars if possible");
-	Serial.println("  - dump card in HEX");
 	Serial.print("cmd> ");
-	digitalWrite(pin_STAT, HIGH);
+	digitalWrite(pin_STAT, LOW);
 
 	while (!Serial.available()) delay(100);
 	char cmd = Serial.read();
@@ -50,13 +54,15 @@ loop() {
 	switch (cmd) {
 		case 'a':
 			printHex = false;
+			/* fallthrough */
+		case 'd':
+			dumpCard();
+			break;
+		case '\n':
 			break;
 		default:
-			printHex = true;
+			help();
 	}
-
-	digitalWrite(pin_STAT, LOW);
-	dumpCard();
 } //loop
 
 // generate CLK pulse (use interrupt?) 
@@ -79,38 +85,36 @@ dumpCard(void) {
     // (READ_BITS / 8 because: uint8_t foo[n] reserves n bytes not bit)
 	uint8_t data[READ_BITS / 8];        // allocate memory for card dump 
 	memset(data, 0x00, READ_BITS / 8);  // write 0x00 in every byte of the allocated memory
-    
+
     // read card
 	for(uint16_t bit = 0; bit < READ_BITS; bit++) {
-		data[bit / 8] |= ((digitalRead(pin_IO) == HIGH) << (bit % 8)); // read bit
+		uint16_t byte = bit / 8;
+		data[byte] |= ((digitalRead(pin_IO) == HIGH) << (bit % 8)); // read bit
 		pulse(pin_CLK);                     // pulse clock every bit
 		if (bit % (BLINK_BYTES * 8) == 0)   // blink led every BLINK_BYTES bytes
 			digitalWrite(pin_STAT, !digitalRead(pin_STAT));
+		if (bit % 8 == 7) {
+			if (byte % 16 == 0) {
+				Serial.print("\r\n0x");
+				if (byte < 0x10)
+					Serial.print("0");
+				if (byte < 0x100)
+					Serial.print("0");
+				Serial.print(byte, HEX);
+				Serial.print("  ");
+			}
+			if (((data[byte] < 0x20) || (data[byte] >= 0x7e)) || printHex) {
+				 if (data[byte] < 0x10)
+					Serial.print("0");
+				Serial.print(data[byte], HEX);
+			  // else: print byte as ASCII char
+			} else {
+				Serial.print(".");
+				Serial.write(data[byte]);
+			}
+			Serial.print(" ");
+		}
 	} // loop for # of bits to be read from the chard
-
-    // write dump to console (write adress; make linebreak each 16byte)
-	for(uint16_t byte = 0; byte < READ_BITS / 8; byte++) {
-		if (byte % 16 == 0) {
-			Serial.print("\r\n0x");
-			if (byte < 0x10)
-				Serial.print("0");
-			if (byte < 0x100)
-				Serial.print("0");
-			Serial.print(byte, HEX);
-			Serial.print("  ");
-		}
-        // check if byte is no valid ASCII char or if Hex output is selected by the user
-		if (((data[byte] < 0x20) || (data[byte] >= 0x7e)) || printHex) {
-		    if (data[byte] < 0x10)
-				Serial.print("0");
-			Serial.print(data[byte], HEX);
-        // else: print byte as ASCII char
-		} else {
-			Serial.print(".");
-			Serial.write(data[byte]);
-		}
-		Serial.print(" ");
-	}
 	Serial.println("");
 } //dumpCard
 
