@@ -38,6 +38,7 @@ void
 setup() {
 	Serial.begin(9600);
 
+Serial.println("setup()");
 	pinMode(pin_STAT, OUTPUT);
 	pinMode(pin_RST, INPUT_PULLUP);
 	pinMode(pin_CLK, INPUT_PULLUP);
@@ -57,7 +58,7 @@ loop() {
 	for (int i = 0; i < 2; i++) {
 		if (psc[0] < 0)
 			Serial.print("0");
-		Serial.print(psc[0], HEX);
+		Serial.print(psc[i], HEX);
 	}
 	Serial.println("");
 } //loop
@@ -96,50 +97,60 @@ vomit(void) {
 
 	last_byte = (last_byte << 1) | data;
 
+    Serial.println("Enterin State Machine");
 	if (bit_count == 7) { /* complete byte read */
 		switch (state) {
 			case WAIT_BEGIN:
+                Serial.println("WAIT_BEGIN");
 				if (last_byte == MAGIC_WRITE)
 					state = WAIT_ADDR1;
 				break;
 			case WAIT_ADDR1:
+                Serial.println("WAIT_ADDR1");
 				if (last_byte == 253) /* lowest 8 bit of address 1021 */
 					state = IGN_BYTE;
 				else
 					state = WAIT_BEGIN;
 				break;
 			case IGN_BYTE:
+                Serial.println("IGN_BYTE");
 				state = WAIT_WRITE1;
 				break;
 			case WAIT_WRITE1:
+                Serial.println("WAIT_WRITE1");
 				if (last_byte == MAGIC_WRITE)
 					state = WAIT_ADDR2;
 				else
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_ADDR2:
+                Serial.println("WAITADDR");
 				if (last_byte == 254) /* lowest 8 bit of address 1022 */
 					state = WAIT_PIN1;
 				else
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_PIN1:
+                Serial.println("WAIT_PIN1");
 				psc[0] = last_byte;
 				state = WAIT_WRITE2;
 				break;
 			case WAIT_WRITE2:
+                Serial.println("WAIT_WRITE2");
 				if (last_byte == MAGIC_WRITE)
 					state = WAIT_ADDR3;
 				else
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_ADDR3:
+                Serial.println("WAIT_ADDR3");
 				if (last_byte == 255) /* lowest 8 bit of address 1023 */
 					state = WAIT_PIN2;
 				else
 					state = WAIT_BEGIN;
 				break;
 			case WAIT_PIN2:
+                Serial.println("WAIT_PIN2");
 				psc[1] = last_byte;
 			default:
 				return;
