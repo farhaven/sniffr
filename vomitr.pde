@@ -30,7 +30,7 @@ enum state_t {
 
 #define MAGIC_WRITE 143 /* magic for "write to anywhere with highest two bits set */
 
-uint8_t psc[2] = {0, 0}; // 2-byte programmable security code
+uint8_t psc[2] = {0, 0}; // 2-byte programmable security code TODO: store in EEPROM
 uint8_t data = 0;
 uint8_t bit_count = 0;
 
