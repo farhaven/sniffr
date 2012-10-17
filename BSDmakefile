@@ -150,6 +150,9 @@ eep: applet/$(TARGET).eep
 lss: applet/$(TARGET).lss 
 sym: applet/$(TARGET).sym
 
+terminal:
+	sudo cu -l $(PORT)
+
 # Program the device.  
 upload: all applet/$(TARGET).hex
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
