@@ -17,10 +17,8 @@ uint8_t pin_CLK = 2;
 uint8_t pin_IO  = 10;
 uint8_t pin_STAT = 13;      // debug LED 
 
-void dumpCard(void);
+void dumpCard(bool);
 void pulse(uint8_t);
-
-bool printHex = true;
 
 void
 help(void) {
@@ -36,34 +34,38 @@ setup() {
 	pinMode(pin_RST, OUTPUT);
 	pinMode(pin_CLK, OUTPUT);
 	pinMode(pin_IO, INPUT_PULLUP);
-} //setup
+	help();
+}
 
-// ask if card dump should be printed in ASCII or HEX
 void
 loop() {
+	uint8_t cmd;
+
 	Serial.print("cmd> ");
 	digitalWrite(pin_STAT, LOW);
 
-	while (!Serial.available()) delay(100);
-	char cmd = Serial.read();
-	if (cmd != '\n')
-		Serial.println(cmd);
-	else
-		Serial.println("");
+	while (true) {
+		while (!Serial.available()) delay(100);
+		cmd = Serial.read();
+		if ((cmd != '\n') && (cmd != '\r'))
+			break;
+	}
+	Serial.write(cmd);
+	Serial.println("");
 
 	switch (cmd) {
 		case 'a':
-			printHex = false;
-			/* fallthrough */
+			dumpCard(false);
+			break;
 		case 'd':
-			dumpCard();
+			dumpCard(true);
 			break;
 		case '\n':
 			break;
 		default:
 			help();
 	}
-} //loop
+}
 
 // generate CLK pulse (use interrupt?) 
 void
@@ -77,48 +79,41 @@ pulse(uint8_t pin) {
 
 // read card and write output to serial console
 void
-dumpCard(void) {
+dumpCard(bool printHex) {
 	digitalWrite(pin_RST, HIGH);
 	pulse(pin_CLK);
 	digitalWrite(pin_RST, LOW);
 
-    // (READ_BITS / 8 because: uint8_t foo[n] reserves n bytes not bit)
-	uint8_t data[READ_BITS / 8];        // allocate memory for card dump 
-	memset(data, 0x00, READ_BITS / 8);  // write 0x00 in every byte of the allocated memory
-
-    // read card
-	for(uint16_t bit = 0; bit < READ_BITS; bit++) {
-		uint16_t byte = bit / 8;
-		data[byte] |= ((digitalRead(pin_IO) == HIGH) << (bit % 8)); // read bit
-		pulse(pin_CLK);                     // pulse clock every bit
-		if (bit % (BLINK_BYTES * 8) == 0)   // blink led every BLINK_BYTES bytes
+	for(uint16_t addr = 0; addr < (READ_BITS / 8); addr++) {
+		uint8_t data = shiftIn(pin_IO, pin_CLK, LSBFIRST);
+		if (addr % BLINK_BYTES == 0)   // blink led every BLINK_BYTES bytes
 			digitalWrite(pin_STAT, !digitalRead(pin_STAT));
-		if (bit % 8 == 7) {
-			if (byte % 16 == 0) {
-				Serial.print("\r\n0x");
-				if (byte < 0x10)
-					Serial.print("0");
-				if (byte < 0x100)
-					Serial.print("0");
-				Serial.print(byte, HEX);
-				Serial.print("  ");
-			}
-			if (((data[byte] < 0x20) || (data[byte] >= 0x7e)) || printHex) {
-				 if (data[byte] < 0x10)
-					Serial.print("0");
-				Serial.print(data[byte], HEX);
-			  // else: print byte as ASCII char
-			} else {
-				Serial.print(".");
-				Serial.write(data[byte]);
-			}
-			Serial.print(" ");
+		if (addr % 16 == 0) {
+			Serial.print("\r\n0x");
+			if (addr < 0x10)
+				Serial.print("0");
+			if (addr < 0x100)
+				Serial.print("0");
+			Serial.print(addr, HEX);
+			Serial.print("  ");
+		}
+		if (((data < 0x20) || (data >= 0x7e)) || printHex) {
+			 if (data < 0x10)
+				Serial.print("0");
+			Serial.print(data, HEX);
+		} else {
+			Serial.print(".");
+			Serial.write(data);
+		}
+		Serial.print(" ");
+		if (Serial.available()) {
+			(void) Serial.read();
+			break;
 		}
 	} // loop for # of bits to be read from the chard
 	Serial.println("");
 } //dumpCard
 
-// Bugfix for arduino libc
 void __cxa_pure_virtual (void) {
   while(1);
-} //__cxa_pure_virtual
+}
