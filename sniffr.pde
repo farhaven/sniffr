@@ -116,4 +116,4 @@ dumpCard(bool printHex) {
 
 void __cxa_pure_virtual (void) {
   while(1);
-} __cxa_pure_virtual
+} //__cxa_pure_virtual
