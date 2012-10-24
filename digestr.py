@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Serial to csv. (el cheapo with a breeze of ugly)
+# Serial to file. (el cheapo with a breeze of ugly)
 
 import serial # pyserial needed
 import string
@@ -12,7 +12,7 @@ def main():
         while True:
             line = sin.readline()
             print line
-            fo.write(line[0] + "," + line[1] + "\n");
+            fo.write(line + "\n");
                 
     except KeyboardInterrupt:
         fo.close()
